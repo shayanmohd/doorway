@@ -1,0 +1,75 @@
+{
+  "name": "Doorway",
+  "tagline": "The city, filtered by what your day needs.",
+  "bg": "#F5F2EC",
+  "fg": "#14181A",
+  "accent": "#0B6157",
+  "featurebg": "#F5F2EC",
+  "font": "/Users/sherry/Documents/DEVPROJECTS/doorway/store/display.ttf",
+  "mark": [
+    {
+      "t": "line",
+      "pts": [
+        [
+          40,
+          22
+        ],
+        [
+          40,
+          76
+        ]
+      ],
+      "w": 8,
+      "c": "fg",
+      "cap": "butt"
+    },
+    {
+      "t": "line",
+      "pts": [
+        [
+          68,
+          22
+        ],
+        [
+          68,
+          76
+        ]
+      ],
+      "w": 8,
+      "c": "fg",
+      "cap": "butt"
+    },
+    {
+      "t": "line",
+      "pts": [
+        [
+          36,
+          22
+        ],
+        [
+          72,
+          22
+        ]
+      ],
+      "w": 8,
+      "c": "fg",
+      "cap": "butt"
+    },
+    {
+      "t": "circle",
+      "cx": 61,
+      "cy": 53,
+      "r": 3.0,
+      "c": "fg"
+    },
+    {
+      "t": "rect",
+      "x": 19,
+      "y": 76,
+      "w": 70,
+      "h": 8,
+      "r": 4,
+      "c": "accent"
+    }
+  ]
+}

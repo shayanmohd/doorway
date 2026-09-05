@@ -1,0 +1,32 @@
+{
+ "app": "Doorway",
+ "org": "SocialSure Private Limited",
+ "site": "https://shayanmohd.github.io/doorway/",
+ "email": "shayanm2002@gmail.com",
+ "bg": "#F5F2EC",
+ "fg": "#14181A",
+ "muted": "#4F585C",
+ "hair": "#DCD6C9",
+ "accent": "#0B6157",
+ "bgDark": "#14181A",
+ "fgDark": "#EDEAE3",
+ "mutedDark": "#A2AAB0",
+ "hairDark": "#2B3236",
+ "accentDark": "#5FBFAF",
+ "fontFamily": "'Atkinson Hyperlegible', system-ui, sans-serif",
+ "fontCss": "fonts/fonts.css",
+ "permissions": [
+  ["CAMERA", "to photograph a doorway, a toilet or a room while you are surveying it. The picture is downscaled and written to this app's storage on the device. It is never uploaded, because the app has no network permission at all"],
+  ["ACCESS_FINE_LOCATION and ACCESS_COARSE_LOCATION", "to sort your places by how far away they are and to pin a place where you are standing. Android requires both to be requested together. The position is kept on the device and used only for that arithmetic"],
+  ["VIBRATE", "a short tap when an answer lands or a place is marked as still accurate"]
+ ],
+ "network": false,
+ "collects": [],
+ "storage": "Places, surveys, answers, photographs, lists, your needs lens and your last position are stored in this app's private storage on this device. Nothing is uploaded and there is no account. A pack leaves the phone only when you export one yourself and choose where to send it.",
+ "extra": [
+  ["Your needs lens", "The modules and thresholds you set describe your access needs, which is health adjacent information. Doorway keeps it local by architecture rather than by promise: it is never transmitted, and it is deliberately excluded from every pack you export, so sharing places with a friend never shares your needs."],
+  ["Photographs", "Doorway does not detect faces. It cannot honestly claim to, because it carries no model to do it with. Instead the review screen gives you a blur brush, and the pixels you paint over are destroyed before the photograph is written to storage. Photographs stay on the device unless you deliberately include them in a pack you export."],
+  ["Packs you export", "A pack is a plain JSON file containing the places, their surveys, and the name you chose to sign it with, which can be left blank. Your lens, your position and your settings are not in it. Once you send the file, where it goes is up to you and the app has no further part in it."],
+  ["The sample high street", "The eight places offered on first run are invented for demonstration. They are not real businesses, the measurements are not measurements of anywhere, and the whole sample can be removed in one tap."]
+ ]
+}

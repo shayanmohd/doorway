@@ -1,0 +1,42 @@
+{
+ "url": "http://127.0.0.1:8842/index.html",
+ "out": "/Users/sherry/Documents/DEVPROJECTS/doorway/store/screenshots",
+ "width": 540,
+ "height": 960,
+ "dpr": 2,
+ "wait": 1400,
+ "colorScheme": "light",
+ "seed": "(function(){ var k='doorway.v1'; if (localStorage.getItem(k)) return; var s={\"v\": 1, \"places\": [], \"surveys\": [], \"confirms\": [], \"lists\": [], \"lens\": {\"modules\": [{\"type\": \"wheeled\", \"params\": {\"maxStep\": 0, \"minDoor\": 75, \"toilet\": \"must\"}}, {\"type\": \"sensory\", \"params\": {\"noise\": \"moderate\", \"crowd\": \"busy\", \"light\": \"avoid\"}}], \"everyone\": false}, \"settings\": {\"haptics\": true, \"textScale\": 1, \"onboarded\": true, \"sort\": \"distance\", \"name\": \"\", \"sample\": false, \"lastFix\": {\"lat\": 53.4012, \"lng\": -2.9885, \"acc\": 14, \"at\": 0}}}; s.settings.lastFix.at = Date.now(); localStorage.setItem(k, JSON.stringify(s)); })();",
+ "shots": [
+  {
+   "name": "01-places",
+   "waitMs": 900,
+   "before": "\n(async () => {\n  if (!window.__seeded) { window.__seeded = true; Sample.install(); }\n  App.show('places');\n  document.getElementById('toast').hidden = true;\n  await new Promise(r => setTimeout(r, 500));\n})()"
+  },
+  {
+   "name": "02-verdict",
+   "waitMs": 900,
+   "before": "\n(async () => {\n  App.openPlace('smp-orangery');\n  await new Promise(r => setTimeout(r, 600));\n  document.getElementById('placeBody').scrollTop = 0;\n  document.getElementById('toast').hidden = true;\n})()"
+  },
+  {
+   "name": "03-evidence",
+   "waitMs": 900,
+   "before": "\n(async () => {\n  App.openPlace('smp-ledger');\n  await new Promise(r => setTimeout(r, 600));\n  const body = document.getElementById('placeBody');\n  const cards = [...body.querySelectorAll('.card')];\n  const entrance = cards.find(c => c.querySelector('h3') && c.querySelector('h3').textContent === 'The way in');\n  body.scrollTop = entrance.offsetTop - 8;\n  document.getElementById('toast').hidden = true;\n  await new Promise(r => setTimeout(r, 400));\n})()"
+  },
+  {
+   "name": "04-survey",
+   "waitMs": 900,
+   "before": "\n(async () => {\n  App.back();\n  await new Promise(r => setTimeout(r, 300));\n  App.startSurvey(null, null);\n  await new Promise(r => setTimeout(r, 400));\n  const n = document.getElementById('npName');\n  n.value = 'Quayside Bookshop'; n.dispatchEvent(new Event('input', { bubbles: true }));\n  [...document.querySelectorAll('#surveyBody .chip')].find(c => c.textContent === 'Shop').click();\n  await new Promise(r => setTimeout(r, 250));\n  const a = document.getElementById('npArea');\n  a.value = 'Quay Lane'; a.dispatchEvent(new Event('input', { bubbles: true }));\n  document.getElementById('surveyNext').click();\n  await new Promise(r => setTimeout(r, 350));\n  const pick = (q, label) => {\n    const box = [...document.querySelectorAll('#surveyBody .q')].find(x => x.querySelector('.q-h').textContent.indexOf(q) >= 0);\n    if (box) { const c = [...box.querySelectorAll('.chip')].find(c => c.textContent === label); if (c) c.click(); }\n  };\n  pick('How many steps', 'One step');\n  await new Promise(r => setTimeout(r, 250));\n  pick('tall is the tallest', '10 cm');\n  await new Promise(r => setTimeout(r, 250));\n  pick('Is there a ramp', 'Portable ramp, ask staff');\n  await new Promise(r => setTimeout(r, 250));\n  pick('How wide is the opening', '80 cm');\n  await new Promise(r => setTimeout(r, 300));\n  document.getElementById('surveyBody').scrollTop = 300;\n  document.getElementById('toast').hidden = true;\n})()"
+  },
+  {
+   "name": "05-lens",
+   "waitMs": 900,
+   "before": "\n(async () => {\n  App.back();\n  await new Promise(r => setTimeout(r, 300));\n  const yes = document.getElementById('confirmYes');\n  if (!document.getElementById('confirm').hidden) yes.click();\n  await new Promise(r => setTimeout(r, 300));\n  App.show('you');\n  await new Promise(r => setTimeout(r, 300));\n  [...document.querySelectorAll('#youBody button')].find(b => /Edit your lens|Build a lens/.test(b.textContent)).click();\n  await new Promise(r => setTimeout(r, 500));\n  document.getElementById('lensBody').scrollTop = 0;\n  document.getElementById('toast').hidden = true;\n})()"
+  },
+  {
+   "name": "06-check",
+   "waitMs": 900,
+   "before": "\n(async () => {\n  App.back();\n  await new Promise(r => setTimeout(r, 300));\n  App.show('check');\n  await new Promise(r => setTimeout(r, 500));\n  document.querySelector('#v-check .scroller').scrollTop = 0;\n  document.getElementById('toast').hidden = true;\n})()"
+  }
+ ]
+}

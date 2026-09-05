@@ -1,0 +1,6 @@
+First release.
+
+Survey a place in about ninety seconds: steps at the door, the width of the opening, grab bars, turning
+space, noise and light. Set your own thresholds and every place is judged against them, with the reasons
+and the date written out. Confirm what has aged in one tap, and pool places with friends by sending a
+file. No account, no ads, and no internet permission at all.
