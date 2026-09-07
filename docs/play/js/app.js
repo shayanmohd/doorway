@@ -1396,7 +1396,7 @@ const App = (() => {
     const tr = el('div', 'srow');
     const trl = el('div', 'srow-l');
     trl.appendChild(el('b', null, 'Text size'));
-    trl.appendChild(el('span', null, 'The whole app scales, including the drawings.'));
+    trl.appendChild(el('span', null, 'Everything scales, including the labels on the drawings.'));
     tr.appendChild(trl);
     rc.appendChild(tr);
     const chips = el('div', 'chips');

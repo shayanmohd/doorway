@@ -46,7 +46,7 @@ A verdict is drawn as the thing it is about. A door standing open with light com
 place works for your lens, a door part open means check something first, a shut door with a step at
 its foot means it does not, and an outline means nobody has recorded enough to say. The word is always
 beside the drawing, because an app about access that leans on colour alone is arguing against itself.
-Text can be set larger in three steps and the drawings grow with it.
+Text can be set larger in three steps and the drawn labels grow with it.
 
 POOLING, BY HAND
 There is no server and no account, so a group pools what it knows as a file. Export a pack, send it
