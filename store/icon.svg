@@ -1,0 +1,86 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" width="108" height="108">
+  <defs>
+    <linearGradient id="field" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2E86DC"/>
+      <stop offset="0.48" stop-color="#0F5AA8"/>
+      <stop offset="1" stop-color="#062E5E"/>
+    </linearGradient>
+    <radialGradient id="warm" cx="0.5" cy="0.58" r="0.56">
+      <stop offset="0" stop-color="#FFDFA4" stop-opacity="0.72"/>
+      <stop offset="0.45" stop-color="#F6B25C" stop-opacity="0.26"/>
+      <stop offset="1" stop-color="#F6B25C" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="opening" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFF7E7"/>
+      <stop offset="0.52" stop-color="#FFD79A"/>
+      <stop offset="1" stop-color="#F3A945"/>
+    </linearGradient>
+    <linearGradient id="spill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFF3D8" stop-opacity="0.98"/>
+      <stop offset="0.55" stop-color="#FFD79A" stop-opacity="0.7"/>
+      <stop offset="1" stop-color="#F6B25C" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#04203F" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#04203F" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="leaf" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8FB6DE"/>
+      <stop offset="1" stop-color="#D7E7F7"/>
+    </linearGradient>
+    <linearGradient id="sill" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#BFDCF6"/>
+      <stop offset="0.5" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#BFDCF6"/>
+    </linearGradient>
+    <filter id="cast" filterUnits="userSpaceOnUse" x="0" y="0" width="108" height="108">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2.1"/>
+      <feOffset dy="2.6" result="o"/>
+      <feFlood flood-color="#03203F" flood-opacity="0.55"/>
+      <feComposite in2="o" operator="in"/>
+      <feMerge><feMergeNode/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="bloom" filterUnits="userSpaceOnUse" x="0" y="0" width="108" height="108">
+      <feGaussianBlur stdDeviation="3.6"/>
+    </filter>
+  </defs>
+
+  <g id="bg">
+    <rect width="108" height="108" fill="url(#field)"/>
+    <rect width="108" height="108" fill="url(#warm)"/>
+    <!-- courses in the wall, only just there -->
+    <g fill="none" stroke="#DCEBFB" stroke-width="0.7" opacity="0.09">
+      <path d="M0 24 H108 M0 39 H108 M0 54 H108 M0 69 H108"/>
+    </g>
+    <!-- the ground the light lands on -->
+    <rect x="0" y="72" width="108" height="36" fill="url(#floor)"/>
+    <!-- dust turning in the light -->
+    <circle cx="34" cy="34" r="0.9" fill="#FFF1D6" opacity="0.5"/>
+    <circle cx="78" cy="41" r="0.7" fill="#FFF1D6" opacity="0.4"/>
+    <circle cx="72" cy="26" r="0.6" fill="#FFF1D6" opacity="0.35"/>
+  </g>
+
+  <g id="fg">
+    <!-- the light on the floor in front of the opening, fading before the mask can cut it -->
+    <path d="M43 71 H73 L90 92 H26 Z" fill="url(#spill)" filter="url(#bloom)"/>
+    <path d="M44 72 H72 L84 86 H32 Z" fill="url(#spill)" opacity="0.9"/>
+    <!-- the opening, lit from behind -->
+    <rect x="44" y="27" width="28" height="45" rx="1.5" fill="url(#opening)" filter="url(#cast)"/>
+    <rect x="44" y="27" width="28" height="45" rx="1.5" fill="none" stroke="#FFF8EC" stroke-width="1.1" opacity="0.85"/>
+    <!-- the leaf, standing open toward you -->
+    <path d="M44 27 L33 33 V78 L44 72 Z" fill="url(#leaf)" stroke="#0B3A6B" stroke-width="1.6"
+          stroke-linejoin="round" filter="url(#cast)"/>
+    <path d="M36.6 51.5 v6" stroke="#0B3A6B" stroke-width="2" stroke-linecap="round" opacity="0.75"/>
+    <!-- the sill: level, which is the whole point -->
+    <rect x="38" y="70.5" width="40" height="3.4" rx="1.7" fill="url(#sill)"/>
+  </g>
+
+  <g id="mono" fill="#000">
+    <!-- the opening is a hole, the leaf is solid, the light on the floor is a separate wedge:
+         three shapes that stay apart at 24 px, which is all a themed icon gets -->
+    <rect x="44" y="27" width="28" height="45" rx="1.5" fill="none" stroke="#000" stroke-width="4.4"/>
+    <path d="M44 26.2 L32.4 32.6 V78.4 L44 72.8 Z"/>
+    <rect x="37" y="69.6" width="42" height="4.2" rx="2.1"/>
+    <path d="M47 78.5 H69 L77.5 88 H38.5 Z"/>
+  </g>
+</svg>

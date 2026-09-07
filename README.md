@@ -19,6 +19,10 @@ No account, no server, no internet permission.
 - `js/lens.js` is the needs engine. A module is a need, its parameters are your thresholds, and its
   rules turn composed facts into a verdict whose every line names the fact it came from. A place whose
   data has not been seen for a year is downgraded automatically.
+- `js/icons.js` is the drawing language: every icon in the app as an inline SVG stroke of the same
+  weight, and the threshold, the mark this app is named after. The threshold bends into the four
+  answers a lens can give (open, part open, shut, an unfilled outline) and is the same opening the
+  launcher icon in `store/icon.svg` shows.
 - `js/diagram.js` draws the entrance elevation and the toilet plan to scale from the surveyed numbers,
   used wherever a photograph has not been taken.
 - `js/photos.js` keeps photographs as JPEG bytes in IndexedDB and carries the blur brush, which
@@ -30,6 +34,12 @@ No account, no server, no internet permission.
 camera and geolocation permission plumbing, haptics and file export, and declares no INTERNET permission.
 
 `docs/` is the GitHub Pages site: landing page, privacy policy and a playable copy of the app.
+
+`store/icon.svg` and `store/feature.html` are the brand, written by hand and rendered by
+`_shiptools/render-brand.js` into the launcher icon set, the Play icon and the feature graphic.
+
+`test/` holds the headless browser scripts this app is driven with. Run one with
+`node _shiptools/drive.js http://127.0.0.1:8829/index.html test/01-firstrun.js --out test/shots`.
 
 ## Build
 

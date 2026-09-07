@@ -197,10 +197,14 @@ const Store = (() => {
   function places() { return db.places; }
   function place(id) { return db.places.find(p => p.id === id) || null; }
 
+  /* Names and notes are capped and trimmed here rather than at the screen, so a place that
+     arrives from an import, a pack or a future screen cannot be longer than a card can hold. */
+  const text = (v, n) => String(v === undefined || v === null ? '' : v).trim().slice(0, n);
+
   function addPlace(p) {
     const rec = {
-      id: uid('p'), name: (p.name || 'Unnamed place').trim(), kind: p.kind || 'Other',
-      area: (p.area || '').trim(), note: (p.note || '').trim(),
+      id: uid('p'), name: text(p.name, 80) || 'Unnamed place', kind: p.kind || 'Other',
+      area: text(p.area, 80), note: text(p.note, 400),
       lat: typeof p.lat === 'number' ? p.lat : null,
       lng: typeof p.lng === 'number' ? p.lng : null,
       at: Date.now()
@@ -211,7 +215,11 @@ const Store = (() => {
 
   function updatePlace(id, patch) {
     const p = place(id); if (!p) return null;
-    Object.assign(p, patch); save(); return p;
+    const clean = Object.assign({}, patch);
+    if ('name' in clean) clean.name = text(clean.name, 80) || p.name;
+    if ('area' in clean) clean.area = text(clean.area, 80);
+    if ('note' in clean) clean.note = text(clean.note, 400);
+    Object.assign(p, clean); save(); return p;
   }
 
   function removePlace(id) {
@@ -241,8 +249,14 @@ const Store = (() => {
     db.surveys = db.surveys.filter(s => s.id !== id); save();
   }
 
+  /* One confirmation per place per person per day. Tapping "still accurate" twice in a minute
+     is a thumb, not a second visit, and a trust count that counts thumbs is worth nothing. */
   function confirm(placeId, by) {
-    const rec = { id: uid('c'), placeId, at: Date.now(), by: by || 'you' };
+    const who = by || 'you';
+    const today = new Date().setHours(0, 0, 0, 0);
+    const already = db.confirms.find(c => c.placeId === placeId && c.by === who && c.at >= today);
+    if (already) { already.at = Date.now(); save(); return null; }
+    const rec = { id: uid('c'), placeId, at: Date.now(), by: who };
     db.confirms.push(rec); save();
     return rec;
   }
@@ -336,11 +350,13 @@ const Store = (() => {
   /* ── lists ── */
   function lists() { return db.lists; }
   function addList(title) {
-    const rec = { id: uid('l'), title: (title || 'New list').trim(), placeIds: [], at: Date.now() };
+    const rec = { id: uid('l'), title: text(title, 60) || 'New list', placeIds: [], at: Date.now() };
     db.lists.push(rec); save(); return rec;
   }
   function renameList(id, title) {
-    const l = db.lists.find(l => l.id === id); if (l) { l.title = title.trim(); save(); } return l;
+    const l = db.lists.find(l => l.id === id);
+    if (l) { l.title = text(title, 60) || l.title || 'New list'; save(); }
+    return l;
   }
   function removeList(id) { db.lists = db.lists.filter(l => l.id !== id); save(); }
   function inList(listId, placeId) {
@@ -458,6 +474,8 @@ const Store = (() => {
   function wipe() {
     db.places = []; db.surveys = []; db.confirms = []; db.lists = [];
     db.settings.sample = false;
+    // The last position fix is data about you as much as any place is, so it goes with them.
+    db.settings.lastFix = null;
     saveNow();
   }
 

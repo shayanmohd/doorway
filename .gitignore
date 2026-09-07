@@ -8,3 +8,8 @@ android/build/
 android/app/build/
 android/app/src/main/assets/www/
 node_modules/
+test/shots/
+test/shots2/
+test/shots-dark/
+test/shots-rm/
+test/shots-final/

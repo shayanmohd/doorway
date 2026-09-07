@@ -14,7 +14,7 @@
 <!-- ══════ ONBOARDING ══════ -->
 <section class="screen" id="onboard" hidden aria-label="Welcome to Doorway">
   <div class="ob-body">
-    <div class="ob-mark" aria-hidden="true"><span class="ob-door"></span></div>
+    <div class="ob-mark" id="obMark" aria-hidden="true"></div>
     <div id="obTrack" class="ob-track">
       <article class="ob-card">
         <h1>Can I get in?</h1>
@@ -61,20 +61,23 @@
     <button class="btn small primary" id="surveyNewBtn" aria-label="Survey a place">Survey</button>
   </header>
   <div class="filterbar">
-    <label class="srch">
+    <label class="srch" id="srchBox">
       <span class="vh">Search places</span>
       <input type="search" id="placeSearch" placeholder="Search by name or street" autocomplete="off">
     </label>
     <div class="chips scrollx" id="filterChips" role="group" aria-label="Filters"></div>
     <div class="sortrow">
       <div class="chips" id="sortChips" role="group" aria-label="Sort order"></div>
-      <button class="link" id="geoBtn">Use my position</button>
     </div>
-    <p class="note" id="geoNote" hidden></p>
+    <div class="georow" id="geoRow">
+      <button class="link" id="geoBtn">Use my position</button>
+      <p class="note" id="geoNote" hidden></p>
+    </div>
   </div>
   <div class="scroller">
     <div id="placeList" class="stack"></div>
     <div class="empty" id="placesEmpty" hidden>
+      <div class="empty-art" id="placesEmptyArt" aria-hidden="true"></div>
       <p class="empty-h">Nothing surveyed yet.</p>
       <p class="empty-p">Start with the sample high street to see how a place reads once it has been surveyed, or survey the next place you go to. Ninety seconds, and it is yours for good.</p>
       <div class="btnrow">
@@ -98,6 +101,7 @@
   <div class="scroller">
     <div id="listIndex" class="stack"></div>
     <div class="empty" id="listsEmpty" hidden>
+      <div class="empty-art" id="listsEmptyArt" aria-hidden="true"></div>
       <p class="empty-h">No lists yet.</p>
       <p class="empty-p">A list is for the things you plan by: places that work on a bad day, somewhere to take the family, the three cafes near work. Lists can be sent to a friend as a file.</p>
       <div class="btnrow"><button class="btn primary" id="newListBtn2">New list</button></div>
@@ -133,18 +137,18 @@
 
 <!-- ══════ TABS ══════ -->
 <nav id="tabs" hidden aria-label="Main">
-  <button class="tab" data-view="places" aria-current="page"><span>Places</span></button>
-  <button class="tab" data-view="lists"><span>Lists</span></button>
-  <button class="tab" data-view="check"><span>Check</span></button>
-  <button class="tab" data-view="you"><span>You</span></button>
+  <button class="tab" data-view="places" data-icon="place" aria-current="page"><span>Places</span></button>
+  <button class="tab" data-view="lists" data-icon="lists"><span>Lists</span></button>
+  <button class="tab" data-view="check" data-icon="clock"><span>Check</span></button>
+  <button class="tab" data-view="you" data-icon="you"><span>You</span></button>
 </nav>
 
 <!-- ══════ PLACE SHEET ══════ -->
 <div class="sheet" id="sh-place" hidden role="dialog" aria-modal="true" aria-labelledby="placeName">
   <header class="sheet-head">
-    <button class="icon-btn" data-close aria-label="Back to the list"><span class="chev-left" aria-hidden="true"></span></button>
+    <button class="icon-btn" data-close aria-label="Back to the list"><span class="ico" data-icon="back"></span></button>
     <p class="sheet-title" id="placeHeadTitle">Place</p>
-    <button class="icon-btn" id="placeMoreBtn" aria-label="More about this place"><span class="dots" aria-hidden="true"></span></button>
+    <button class="icon-btn" id="placeMoreBtn" aria-label="More about this place"><span class="ico" data-icon="more"></span></button>
   </header>
   <div class="sheet-body" id="placeBody"></div>
   <div class="foot-bar" id="placeFoot">
@@ -156,7 +160,7 @@
 <!-- ══════ SURVEY SHEET ══════ -->
 <div class="sheet" id="sh-survey" hidden role="dialog" aria-modal="true" aria-labelledby="surveyTitle">
   <header class="sheet-head">
-    <button class="icon-btn" data-close aria-label="Close the survey"><span class="x" aria-hidden="true"></span></button>
+    <button class="icon-btn" data-close aria-label="Close the survey"><span class="ico" data-icon="close"></span></button>
     <p class="sheet-title" id="surveyTitle">Survey</p>
     <span class="sheet-count" id="surveyClock" aria-hidden="true"></span>
   </header>
@@ -172,9 +176,9 @@
 <!-- ══════ CAMERA SHEET ══════ -->
 <div class="sheet" id="sh-camera" hidden role="dialog" aria-modal="true" aria-label="Take a photograph">
   <header class="sheet-head">
-    <button class="icon-btn" data-close aria-label="Cancel the photograph"><span class="x" aria-hidden="true"></span></button>
+    <button class="icon-btn" data-close aria-label="Cancel the photograph"><span class="ico" data-icon="close"></span></button>
     <p class="sheet-title" id="camTitle">The way in</p>
-    <button class="icon-btn" id="camFlip" aria-label="Switch camera"><span class="flip" aria-hidden="true"></span></button>
+    <button class="icon-btn" id="camFlip" aria-label="Switch camera"><span class="ico" data-icon="flip"></span></button>
   </header>
   <div class="cam-stage" id="camStage">
     <video id="camVideo" playsinline muted></video>
@@ -200,7 +204,7 @@
 <!-- ══════ SMALL SHEETS ══════ -->
 <div class="sheet short" id="sh-lists" hidden role="dialog" aria-modal="true" aria-label="Add to a list">
   <header class="sheet-head">
-    <button class="icon-btn" data-close aria-label="Close"><span class="x" aria-hidden="true"></span></button>
+    <button class="icon-btn" data-close aria-label="Close"><span class="ico" data-icon="close"></span></button>
     <p class="sheet-title">Add to a list</p>
     <span class="icon-btn spacer"></span>
   </header>
@@ -209,7 +213,7 @@
 
 <div class="sheet short" id="sh-share" hidden role="dialog" aria-modal="true" aria-label="Share places">
   <header class="sheet-head">
-    <button class="icon-btn" data-close aria-label="Close"><span class="x" aria-hidden="true"></span></button>
+    <button class="icon-btn" data-close aria-label="Close"><span class="ico" data-icon="close"></span></button>
     <p class="sheet-title">Send a pack</p>
     <span class="icon-btn spacer"></span>
   </header>
@@ -218,7 +222,7 @@
 
 <div class="sheet short" id="sh-import" hidden role="dialog" aria-modal="true" aria-label="Add a pack">
   <header class="sheet-head">
-    <button class="icon-btn" data-close aria-label="Close"><span class="x" aria-hidden="true"></span></button>
+    <button class="icon-btn" data-close aria-label="Close"><span class="ico" data-icon="close"></span></button>
     <p class="sheet-title">Add a pack</p>
     <span class="icon-btn spacer"></span>
   </header>
@@ -227,7 +231,7 @@
 
 <div class="sheet" id="sh-lens" hidden role="dialog" aria-modal="true" aria-label="Your lens">
   <header class="sheet-head">
-    <button class="icon-btn" data-close aria-label="Close"><span class="chev-left" aria-hidden="true"></span></button>
+    <button class="icon-btn" data-close aria-label="Close"><span class="ico" data-icon="back"></span></button>
     <p class="sheet-title">Your lens</p>
     <span class="icon-btn spacer"></span>
   </header>
@@ -249,6 +253,7 @@
 
 <p id="toast" class="toast" role="status" aria-live="polite" hidden></p>
 
+<script src="js/icons.js"></script>
 <script src="js/store.js"></script>
 <script src="js/lens.js"></script>
 <script src="js/photos.js"></script>

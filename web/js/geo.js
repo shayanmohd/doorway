@@ -51,7 +51,7 @@ const Geo = (() => {
   }
 
   const MESSAGES = {
-    idle: 'Turn on distance to sort by how far away each place is.',
+    idle: '',
     asking: 'Looking for your position.',
     ok: '',
     denied: 'Location was declined, so the list is sorted by name. You can still use everything else.',

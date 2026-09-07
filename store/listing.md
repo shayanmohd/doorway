@@ -36,8 +36,17 @@ EVIDENCE, WITH A DATE ON IT
 Every answer carries who recorded it and when. Surveys that agree are counted, surveys that disagree
 are kept and shown rather than hidden, and anything nobody has seen for a year is flagged and its
 verdict downgraded. Confirming a place is still accurate takes one tap, which is the smallest useful
-contribution there is. Where there is no photograph, Doorway draws the entrance to scale from the
-recorded numbers, and says plainly that it is a drawing.
+contribution there is, and it counts once a day however many times you press it. Where there is no
+photograph, Doorway draws the entrance to scale on a measured grid from the recorded numbers: the
+steps, the rise, the width of the opening, the ramp at the gradient a permanent one is built to. It
+says plainly that it is a drawing and not a photograph.
+
+READ AT A GLANCE, OR IN FULL
+A verdict is drawn as the thing it is about. A door standing open with light coming through means the
+place works for your lens, a door part open means check something first, a shut door with a step at
+its foot means it does not, and an outline means nobody has recorded enough to say. The word is always
+beside the drawing, because an app about access that leans on colour alone is arguing against itself.
+Text can be set larger in three steps and the drawings grow with it.
 
 POOLING, BY HAND
 There is no server and no account, so a group pools what it knows as a file. Export a pack, send it
@@ -77,6 +86,7 @@ Privacy policy: https://shayanmohd.github.io/doorway/privacy-policy.html
   no feed and no user to user communication inside the app.
 - Target audience: 13 and over.
 - Content rating: no violence, sexuality, profanity, controlled substances, gambling or location sharing.
-- AI-generated assets: none. The icon and feature graphic are drawn procedurally from store/brand.json,
-  the entrance and toilet drawings are drawn by the app from surveyed numbers, and the screenshots are
-  captures of the running app.
+- AI-generated assets: none. The icon and the feature graphic are hand written as an SVG and an HTML
+  page in store/ and rendered by a script, the marks and illustrations inside the app are inline SVG
+  written by hand, the entrance and toilet drawings are drawn by the app from surveyed numbers, and
+  the screenshots are captures of the running app.

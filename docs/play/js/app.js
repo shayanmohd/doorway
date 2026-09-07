@@ -44,12 +44,42 @@ const App = (() => {
     if (cb) cb(!!ok);
   }
 
-  function mark(level) { return el('span', 'mk mk-' + level); }
+  /* Two marks, both drawn. The tick, bang, cross and query say what kind of thing a line is.
+     The door says the same thing in the app's own language: open, part open, shut, or an
+     outline nobody has filled in. Both always sit beside words, never instead of them. */
+  const MARK_ICON = { ok: 'tick', check: 'bang', blocked: 'cross', unknown: 'query' };
+  const DOOR_STATE = { ok: 'open', check: 'ajar', blocked: 'shut', unknown: 'faint' };
+
+  function mark(level) {
+    const s = el('span', 'mk mk-' + level);
+    s.appendChild(Icons.icon(MARK_ICON[level] || 'query', 18, 2.4));
+    return s;
+  }
+
+  function doorMark(level, size, warm) {
+    return Icons.threshold(size || 22, DOOR_STATE[level] || 'faint',
+      { ink: 'currentColor', light: warm ? 'var(--light)' : 'currentColor' });
+  }
 
   function verdictBadge(v, full) {
     const b = el('span', 'verdict v-' + v.level);
-    b.appendChild(mark(v.level));
+    b.appendChild(doorMark(v.level, 26, true));
     b.appendChild(el('span', null, full ? v.label : v.short));
+    return b;
+  }
+
+  /* Fills every data-icon slot in the markup, once, at start. */
+  function paintIcons(root) {
+    for (const slot of (root || document).querySelectorAll('span.ico[data-icon]')) {
+      if (slot.firstChild) continue;
+      slot.appendChild(Icons.icon(slot.dataset.icon, 22, 2.2));
+    }
+  }
+
+  function btn(cls, label, iconName) {
+    const b = el('button', cls);
+    if (iconName) b.appendChild(Icons.icon(iconName, 18, 2.2));
+    b.appendChild(el('span', null, label));
     return b;
   }
 
@@ -163,7 +193,11 @@ const App = (() => {
     let rows = all.map(decorate).filter(r => passesFilters(r.c));
     if (term) rows = rows.filter(r => (r.p.name + ' ' + r.p.area + ' ' + r.p.kind).toLowerCase().includes(term));
     sortRows(rows, Store.settings().sort);
-    for (const r of rows) list.appendChild(placeRow(r));
+    rows.forEach((r, i) => {
+      const row = placeRow(r);
+      if (i < 12) { row.classList.add('rise'); row.style.animationDelay = (i * 28) + 'ms'; }
+      list.appendChild(row);
+    });
 
     const lens = Lens.active();
     const lensName = lens.length ? lens.map(m => Lens.MOD[m.type].name).join(' and ') : 'Everyone view';
@@ -185,6 +219,10 @@ const App = (() => {
     renderFilterChips();
     renderSortChips();
     renderGeoNote();
+    if (!all.length) {
+      const art = $('placesEmptyArt');
+      if (art && !art.firstChild) art.appendChild(Icons.scene(268, 168, { animate: true }));
+    }
   }
 
   function renderFilterChips() {
@@ -224,11 +262,15 @@ const App = (() => {
     const n = $('geoNote');
     const msg = Geo.MESSAGES[Geo.state] || '';
     const fix = Geo.last();
+    n.className = 'note';
     if (Store.settings().sort !== 'distance') { n.hidden = true; $('geoBtn').hidden = true; return; }
     $('geoBtn').hidden = false;
     $('geoBtn').textContent = fix ? 'Update' : 'Use my position';
     $('geoBtn').setAttribute('aria-label', fix ? 'Update my position' : 'Use my position');
-    if (fix && Geo.state !== 'asking') {
+    if (Geo.state === 'asking') {
+      // A fix can take several seconds indoors, which is exactly where it gets asked for.
+      n.hidden = false; n.className = 'loading'; n.textContent = Geo.MESSAGES.asking;
+    } else if (fix) {
       n.hidden = false;
       n.textContent = 'From your position ' + Store.ago(fix.at) +
         (fix.acc ? ', about ' + fix.acc + ' m accurate.' : '.');
@@ -260,17 +302,19 @@ const App = (() => {
     if (fact.n > 1) bits.push(fact.n + ' surveys agree');
     else bits.push(fact.by === 'you' ? 'your survey' : fact.by);
     bits.push(Store.ago(fact.seen));
-    if (fact.reconfirmed) bits.push('confirmed since');
+    if (fact.reconfirmed) bits.push('confirmed since then');
     return bits.join(', ');
   }
 
   function factRow(f, fact) {
     const row = el('div', 'frow');
-    const l = el('div', 'frow-l', f.label);
-    const r = el('div', 'frow-v');
-    r.appendChild(el('span', null, Store.say(f.k, fact.v)));
-    r.appendChild(el('span', 'frow-p', provenance(fact)));
-    row.appendChild(l); row.appendChild(r);
+    const top = el('div', 'frow-top');
+    top.appendChild(el('span', 'frow-l', f.label));
+    top.appendChild(el('span', 'frow-v', Store.say(f.k, fact.v)));
+    row.appendChild(top);
+    // Where the answer came from sits under it on its own line. Right aligning it against a
+    // wrapping label turned every long provenance into a staircase.
+    row.appendChild(el('p', 'frow-p', provenance(fact)));
     return row;
   }
 
@@ -362,24 +406,32 @@ const App = (() => {
 
     /* hero: the newest photograph if there is one, otherwise the scale drawing */
     const hero = el('div', 'hero');
-    const photo = c.photos.filter(x => x.role === 'entrance').sort((a, b) => b.at - a.at)[0] || c.photos[0];
-    if (photo) {
-      const img = el('img');
-      img.alt = 'Photograph of ' + p.name + ', taken ' + Store.ago(photo.at) + '.';
-      hero.appendChild(img);
-      Photos.url(photo.media).then(u => { if (u) img.src = u; else hero.removeChild(img); });
-    } else {
+    const drawHero = (lost) => {
+      clear(hero);
       const wrap = el('div', 'hero-draw');
       const cv = document.createElement('canvas');
       cv.setAttribute('role', 'img');
       cv.setAttribute('aria-label', 'Scale drawing of the way in, made from the surveyed numbers.');
       wrap.appendChild(cv);
       hero.appendChild(wrap);
-      hero.appendChild(el('p', 'hero-cap', c.facts['entrance.steps'] || c.facts['entrance.door_width_cm']
-        ? 'No photograph yet. This is drawn from the surveyed numbers.'
-        : 'No photograph and no measurements yet.'));
+      hero.appendChild(el('p', 'hero-cap', lost
+        ? 'The photograph is no longer on this phone. This is drawn from the surveyed numbers.'
+        : (c.facts['entrance.steps'] || c.facts['entrance.door_width_cm']
+          ? 'No photograph yet. This is drawn from the surveyed numbers.'
+          : 'No photograph and no measurements yet.')));
       Diagram.entrance(cv, c.facts, { width: Math.min(window.innerWidth - 32, 460), height: 208 });
-    }
+    };
+    const photo = c.photos.filter(x => x.role === 'entrance').sort((a, b) => b.at - a.at)[0] || c.photos[0];
+    if (photo) {
+      const img = el('img');
+      img.alt = 'Photograph of ' + p.name + ', taken ' + Store.ago(photo.at) + '.';
+      hero.appendChild(img);
+      // A picture whose bytes have gone (storage cleared, a restore that brought back the
+      // notes and not the album) must not leave a grey band where the evidence was.
+      Photos.url(photo.media).then(u => {
+        if (u) { img.src = u; img.onerror = () => drawHero(true); } else drawHero(true);
+      }).catch(() => drawHero(true));
+    } else drawHero();
     body.appendChild(hero);
 
     if (c.photos.length > 1) {
@@ -389,7 +441,8 @@ const App = (() => {
         const role = (Store.PHOTO_ROLES.find(r => r.v === ph.role) || {}).label || 'Photograph';
         img.alt = role + ', ' + Store.ago(ph.at);
         strip.appendChild(img);
-        Photos.url(ph.media).then(u => { if (u) img.src = u; });
+        Photos.url(ph.media).then(u => { if (u) img.src = u; else img.remove(); })
+          .catch(() => img.remove());
       }
       body.appendChild(strip);
     }
@@ -408,8 +461,8 @@ const App = (() => {
 
     if (v) {
       const panel = el('div', 'vpanel');
-      const ph = el('div', 'vpanel-h');
-      ph.appendChild(mark(v.level));
+      const ph = el('div', 'vpanel-h vp-' + v.level);
+      ph.appendChild(doorMark(v.level, 40, v.level === 'ok' || v.level === 'check'));
       ph.appendChild(el('span', 'big', v.label));
       ph.appendChild(el('span', 'lens-name', Lens.active().map(m => Lens.MOD[m.type].name).join(', ')));
       panel.appendChild(ph);
@@ -468,13 +521,13 @@ const App = (() => {
     act.id = 'placeActions';
     act.appendChild(el('h3', null, 'This place'));
     const row = el('div', 'btnrow');
-    const bList = el('button', 'btn small', 'Add to a list');
+    const bList = btn('btn small', 'Add to a list', 'lists');
     bList.addEventListener('click', () => openListPicker(p.id));
-    const bSend = el('button', 'btn small', 'Send this place');
+    const bSend = btn('btn small', 'Send this place', 'send');
     bSend.addEventListener('click', () => sendPlace(p));
-    const bEdit = el('button', 'btn small', 'Edit details');
+    const bEdit = btn('btn small', 'Edit details', 'edit');
     bEdit.addEventListener('click', () => editPlace(p));
-    const bDel = el('button', 'btn small danger', 'Remove');
+    const bDel = btn('btn small danger', 'Remove', 'trash');
     bDel.addEventListener('click', () => {
       ask('Remove ' + p.name + '?', 'Its surveys and photographs go with it. This cannot be undone.', 'Remove', ok => {
         if (!ok) return;
@@ -494,15 +547,18 @@ const App = (() => {
     body.scrollTop = keepTop;
 
     $('stillBtn').disabled = c.surveyCount === 0;
-    $('stillBtn').textContent = c.surveyCount === 0 ? 'Nothing to confirm' : 'Still accurate';
+    const stillLbl = $('stillBtn').querySelector('.lbl');
+    if (stillLbl) stillLbl.textContent = c.surveyCount === 0 ? 'Nothing to confirm' : 'Still accurate';
   }
 
   function stillAccurate() {
     const p = Store.place(placeId); if (!p) return;
-    Store.confirm(p.id);
+    const fresh = Store.confirm(p.id);
     N.pattern([14, 60, 22], 170);
-    toast('Marked as still accurate today. That is the whole contribution.');
+    toast(fresh ? 'Marked as still accurate today. That is the whole contribution.'
+                : 'Already dated today. One tap a day is all it needs.');
     renderPlace();
+    render(view);
   }
 
   function sendPlace(p) {
@@ -590,17 +646,24 @@ const App = (() => {
       survey.known = Store.compose(existingId).facts;
     }
     openSheet('sh-survey');
-    renderStep();
+    lastStepKey = null;
+    renderStep(false);
   }
 
   function currentStep() { return survey.steps[survey.step]; }
 
-  function renderStep() {
+  let lastStepKey = null;
+  function renderStep(keepScroll) {
     if (!survey) return;
     const s = currentStep();
     const body = $('surveyBody');
+    // Answering a question rebuilds the step, because one answer can reveal the next question.
+    // Rebuilding it must not throw you back to the top of a screen you were half way down.
+    const key = survey.step + ':' + (survey.placeId || 'new');
+    const keep = keepScroll !== false && key === lastStepKey ? body.scrollTop : 0;
+    lastStepKey = key;
     clear(body);
-    body.scrollTop = 0;
+    body.scrollTop = keep;
     const place = survey.placeId ? Store.place(survey.placeId) : null;
     $('surveyTitle').textContent = place ? place.name : 'New place';
 
@@ -615,6 +678,7 @@ const App = (() => {
     else if (s === 'review') renderReviewStep(body);
     else renderGroupStep(body, s);
 
+    body.scrollTop = keep;
     $('surveyBack').hidden = survey.step === 0;
     $('surveySkip').hidden = s === 'review' || s === 'place';
     $('surveyNext').textContent = s === 'review' ? 'Save survey' : 'Next';
@@ -630,8 +694,14 @@ const App = (() => {
     const l1 = el('label', null, 'Name of the place'); l1.setAttribute('for', 'npName');
     const i1 = el('input'); i1.type = 'text'; i1.id = 'npName'; i1.value = np.name;
     i1.placeholder = 'The name over the door';
-    i1.addEventListener('input', () => { np.name = i1.value; });
+    i1.maxLength = 80;
+    i1.addEventListener('input', () => {
+      np.name = i1.value;
+      const e = $('npNameErr');
+      if (e && i1.value.trim()) { e.remove(); i1.removeAttribute('aria-invalid'); }
+    });
     f1.appendChild(l1); f1.appendChild(i1);
+    if (survey.nameError) f1.appendChild(nameError());
     body.appendChild(f1);
 
     const f2 = el('div', 'field');
@@ -650,17 +720,28 @@ const App = (() => {
     const l3 = el('label', null, 'Street or area'); l3.setAttribute('for', 'npArea');
     const i3 = el('input'); i3.type = 'text'; i3.id = 'npArea'; i3.value = np.area;
     i3.placeholder = 'Enough to find it again';
+    i3.maxLength = 80;
     i3.addEventListener('input', () => { np.area = i3.value; });
     f3.appendChild(l3); f3.appendChild(i3);
     body.appendChild(f3);
 
     const f4 = el('div', 'field');
     f4.appendChild(el('p', 'flabel', 'Position'));
-    const b = el('button', 'btn', np.lat === null ? 'Pin where I am standing' : 'Position saved, pin again');
+    const b = btn('btn', np.lat === null ? 'Pin where I am standing' : 'Position saved, pin again', 'pin');
     b.addEventListener('click', () => {
-      b.textContent = 'Looking for a position';
+      b.disabled = true;
+      const wait = el('p', 'loading', Geo.MESSAGES.asking);
+      f4.appendChild(wait);
       Geo.locate().then(fix => {
-        if (!fix) { b.textContent = 'No position available'; toast(Geo.MESSAGES[Geo.state]); return; }
+        b.disabled = false;
+        wait.remove();
+        if (!fix) {
+          const err = el('p', 'inline-err');
+          err.appendChild(Icons.icon('bang', 16, 2.4));
+          err.appendChild(el('span', null, Geo.MESSAGES[Geo.state] || 'No position available.'));
+          f4.appendChild(err);
+          return;
+        }
         np.lat = fix.lat; np.lng = fix.lng;
         N.buzz(10, 130);
         renderStep();
@@ -697,8 +778,8 @@ const App = (() => {
       const role = g === 'inside' ? 'inside' : g;
       const taken = survey.photos.filter(p => p.role === role).length;
       const row = el('div', 'btnrow');
-      const b = el('button', 'btn' + (taken ? '' : ' primary'),
-        taken ? 'Photograph again (' + taken + ' taken)' : 'Photograph ' + group.title.toLowerCase());
+      const b = btn('btn' + (taken ? '' : ' primary'),
+        taken ? 'Photograph again, ' + taken + ' taken' : 'Photograph ' + group.title.toLowerCase(), 'camera');
       b.addEventListener('click', () => openCamera(role));
       row.appendChild(b);
       body.appendChild(row);
@@ -738,7 +819,7 @@ const App = (() => {
     const known = knownValue(f.k);
     if (f.hint) q.appendChild(el('p', 'q-hint', f.hint));
     if (known && factValue(f.k) === undefined) {
-      q.appendChild(el('p', 'q-hint', 'Already recorded as ' + Store.say(f.k, known.v) + ' (' + Store.ago(known.seen) + '). Answer only if it has changed.'));
+      q.appendChild(el('p', 'q-known', 'Already recorded as ' + Store.say(f.k, known.v) + ' (' + Store.ago(known.seen) + '). Answer only if it has changed.'));
     }
     if (f.type === 'choice') {
       const chips = el('div', 'chips');
@@ -763,15 +844,33 @@ const App = (() => {
       if (cur !== undefined) {
         const st = el('div', 'stepper');
         st.style.marginTop = '10px';
-        const minus = el('button', null, '-');
+        const minus = el('button');
+        minus.appendChild(Icons.icon('minus', 20, 2.4));
         minus.setAttribute('aria-label', 'One ' + f.unit + ' less');
         const val = el('div', 'val');
-        val.appendChild(el('span', null, String(cur)));
+        const num = el('span', null, String(cur));
+        val.appendChild(num);
         val.appendChild(el('small', null, f.unit));
-        const plus = el('button', null, '+');
+        const plus = el('button');
+        plus.appendChild(Icons.icon('plus', 20, 2.4));
         plus.setAttribute('aria-label', 'One ' + f.unit + ' more');
-        minus.addEventListener('click', () => setFact(f.k, Math.max(f.min, Number(cur) - 1)));
-        plus.addEventListener('click', () => setFact(f.k, Math.min(f.max, Number(cur) + 1)));
+        // A number is the one answer that never changes which questions follow it, so it is
+        // written straight into the record and straight onto the screen. No rebuild, no jump.
+        const nudge = d => {
+          const now = Number(survey.facts[f.k]);
+          const next = Math.min(f.max, Math.max(f.min, now + d));
+          if (next === now) return;
+          survey.facts[f.k] = next;
+          num.textContent = String(next);
+          for (const c of q.querySelectorAll('.chip')) {
+            const on = parseFloat(c.textContent) === next;
+            c.classList.toggle('is-on', on);
+            c.setAttribute('aria-pressed', on ? 'true' : 'false');
+          }
+          N.buzz(6, 100);
+        };
+        minus.addEventListener('click', () => nudge(-1));
+        plus.addEventListener('click', () => nudge(1));
         st.appendChild(minus); st.appendChild(val); st.appendChild(plus);
         q.appendChild(st);
       }
@@ -820,16 +919,27 @@ const App = (() => {
   }
 
   function tickClock() {
-    if (!survey) return;
+    if (!survey || !$('surveyClock')) return;
     const secs = Math.round((Date.now() - survey.started) / 1000);
     $('surveyClock').textContent = secs < 600 ? secs + 's' : '';
   }
 
+  function nameError() {
+    const e = el('p', 'inline-err');
+    e.id = 'npNameErr';
+    e.appendChild(Icons.icon('bang', 16, 2.4));
+    e.appendChild(el('span', null, 'A name is the one thing a place cannot do without. Anything you would recognise it by will do.'));
+    return e;
+  }
+
   function saveSurvey() {
+    if (!survey) return;
     const keys = Object.keys(survey.facts);
     if (survey.newPlace && !survey.newPlace.name.trim()) {
-      toast('Give the place a name first.');
-      survey.step = 0; renderStep(); return;
+      survey.nameError = true;
+      survey.step = 0; renderStep(false);
+      const i = $('npName'); if (i) { i.setAttribute('aria-invalid', 'true'); i.focus(); }
+      return;
     }
     if (!keys.length && !survey.photos.length) {
       toast('Nothing to save yet.');
@@ -855,18 +965,24 @@ const App = (() => {
   }
 
   function nextStep() {
+    // The save closes the sheet and drops the survey. A second tap landing after that used to
+    // reach in for a step that no longer existed and take the whole page down with it.
+    if (!survey) return;
     if (currentStep() === 'review') { saveSurvey(); return; }
     if (currentStep() === 'place' && !survey.newPlace.name.trim()) {
-      toast('The place needs a name.');
-      const i = $('npName'); if (i) i.focus();
+      survey.nameError = true;
+      renderStep(false);
+      const i = $('npName'); if (i) { i.setAttribute('aria-invalid', 'true'); i.focus(); }
       return;
     }
+    survey.nameError = false;
     survey.step = Math.min(survey.steps.length - 1, survey.step + 1);
-    renderStep();
+    renderStep(false);
   }
   function prevStep() {
+    if (!survey) return;
     survey.step = Math.max(0, survey.step - 1);
-    renderStep();
+    renderStep(false);
   }
 
   function abandonSurvey() {
@@ -902,7 +1018,9 @@ const App = (() => {
   }
 
   function showCamOff(msg) {
-    $('camOff').hidden = false;
+    const box = $('camOff');
+    box.hidden = false;
+    if (!box.querySelector('svg')) box.insertBefore(Icons.icon('camera', 40, 1.8), box.firstChild);
     $('camOffMsg').textContent = msg;
     $('camVideo').style.visibility = 'hidden';
   }
@@ -1001,6 +1119,10 @@ const App = (() => {
     clear(box);
     const ls = Store.lists();
     $('listsEmpty').hidden = ls.length > 0;
+    if (!ls.length) {
+      const art = $('listsEmptyArt');
+      if (art && !art.firstChild) art.appendChild(Icons.terrace(240, 96));
+    }
     for (const l of ls) {
       const card = el('div', 'card');
       const head = el('div', 'card-h');
@@ -1014,11 +1136,11 @@ const App = (() => {
       for (const p of places) inner.appendChild(compactRow(p));
       card.appendChild(inner);
       const row = el('div', 'btnrow');
-      const send = el('button', 'btn small', 'Send this list');
+      const send = btn('btn small', 'Send this list', 'send');
       send.addEventListener('click', () => openShare(l.id));
-      const ren = el('button', 'btn small', 'Rename');
+      const ren = btn('btn small', 'Rename', 'edit');
       ren.addEventListener('click', () => renameList(l));
-      const del = el('button', 'btn small danger', 'Delete list');
+      const del = btn('btn small danger', 'Delete list', 'trash');
       del.addEventListener('click', () => {
         ask('Delete ' + l.title + '?', 'The places stay, only the list goes.', 'Delete', ok => {
           if (!ok) return;
@@ -1096,8 +1218,13 @@ const App = (() => {
     clear(box);
     const all = Store.places();
     if (!all.length) {
-      box.appendChild(el('p', 'empty-h', 'Nothing to check yet.'));
-      box.appendChild(el('p', 'empty-p', 'Once you have surveyed a place, this is where Doorway tells you what has aged and what your lens still needs from it.'));
+      const e = el('div', 'empty');
+      const art = el('div', 'empty-art');
+      art.appendChild(Icons.terrace(240, 96));
+      e.appendChild(art);
+      e.appendChild(el('p', 'empty-h', 'Nothing to check yet.'));
+      e.appendChild(el('p', 'empty-p', 'Once you have surveyed a place, this is where Doorway tells you what has aged and what your lens still needs from it.'));
+      box.appendChild(e);
       return;
     }
 
@@ -1123,10 +1250,10 @@ const App = (() => {
       if (r.c.surveyCount) {
         const s = el('button', 'btn small', 'Still accurate');
         s.addEventListener('click', () => {
-          Store.confirm(r.p.id);
+          const fresh = Store.confirm(r.p.id);
           N.pattern([14, 60, 22], 170);
           renderCheck();
-          toast('Dated today. Thank you.');
+          toast(fresh ? 'Dated today.' : 'Already dated today.');
         });
         row.appendChild(s);
       }
@@ -1146,7 +1273,14 @@ const App = (() => {
       if (!gaps.length) box.appendChild(el('p', 'note tight', 'Every place has the facts your lens reads. That is unusual and good.'));
       for (const x of gaps.slice(0, 12)) {
         const card = el('div', 'card');
-        card.appendChild(el('h3', null, x.r.p.name));
+        const h = el('div', 'card-h');
+        const nm = el('h3', null, x.r.p.name);
+        h.appendChild(nm);
+        // The outline of a door nobody has filled in: the same mark, in its unknown state.
+        const gapMark = el('span', 'mk-gap');
+        gapMark.appendChild(doorMark('unknown', 30));
+        h.appendChild(gapMark);
+        card.appendChild(h);
         card.appendChild(el('p', 'note tight', 'Missing: ' +
           x.g.map(k => Store.FACT[k].label.toLowerCase()).join(', ') + '.'));
         const row = el('div', 'btnrow');
@@ -1267,9 +1401,9 @@ const App = (() => {
     nf.appendChild(nl); nf.appendChild(ni);
     sc.appendChild(nf);
     const srow = el('div', 'btnrow');
-    const sb = el('button', 'btn small primary', 'Send a pack');
+    const sb = btn('btn small primary', 'Send a pack', 'send');
     sb.addEventListener('click', () => openShare(null));
-    const ib = el('button', 'btn small', 'Add a pack');
+    const ib = btn('btn small', 'Add a pack', 'receive');
     ib.addEventListener('click', openImport);
     srow.appendChild(sb); srow.appendChild(ib);
     sc.appendChild(srow);
@@ -1303,13 +1437,14 @@ const App = (() => {
     sr.appendChild(srl); sr.appendChild(stg);
     dc.appendChild(sr);
     const drow = el('div', 'btnrow');
-    const eb2 = el('button', 'btn small', 'Export everything');
+    const eb2 = btn('btn small', 'Export everything', 'send');
     eb2.addEventListener('click', () => openShare(null, true));
-    const wipe = el('button', 'btn small danger', 'Delete everything');
+    const wipe = btn('btn small danger', 'Delete everything', 'trash');
     wipe.addEventListener('click', () => {
       ask('Delete everything?', 'Every place, survey, photograph and list on this phone. There is no copy anywhere else, so export first if you want one.', 'Delete it all', ok => {
         if (!ok) return;
         Photos.clear();
+        Geo.clear();
         Store.wipe();
         applyScale();
         toast('Everything deleted.');
@@ -1527,11 +1662,15 @@ const App = (() => {
   /* ══ onboarding ══ */
   let obIndex = 0;
   function renderOnboard() {
+    const mk = $('obMark');
+    if (mk && !mk.firstChild) mk.appendChild(Icons.scene(300, 188, { animate: true }));
     const cards = $('obTrack').children;
     for (let i = 0; i < cards.length; i++) cards[i].hidden = (i !== obIndex);
     const dots = $('obDots');
     clear(dots);
     for (let i = 0; i < cards.length; i++) dots.appendChild(el('i', i === obIndex ? 'on' : ''));
+    const shown = cards[obIndex];
+    if (shown) { shown.classList.remove('rise'); void shown.offsetWidth; shown.classList.add('rise'); }
     $('obNext').textContent = obIndex === cards.length - 1 ? 'Set up your lens' : 'Next';
   }
 
@@ -1544,8 +1683,24 @@ const App = (() => {
 
   /* ══ wiring ══ */
   function wire() {
+    paintIcons();
     for (const t of document.querySelectorAll('.tab')) {
+      t.insertBefore(Icons.icon(t.dataset.icon, 24, 2), t.firstChild);
       t.addEventListener('click', () => { N.buzz(7, 110); show(t.dataset.view); });
+    }
+    // The mark sits on the first screen, the same opening the launcher icon shows.
+    const h = document.querySelector('#v-places .tb-title h1');
+    if (h) h.insertBefore(Icons.threshold(30, 'open', { ink: 'var(--ink)', light: 'var(--light)', gradient: true }), h.firstChild);
+    const srch = $('srchBox');
+    if (srch) srch.insertBefore(Icons.icon('search', 22, 2.2), srch.firstChild);
+    for (const [id, name] of [['surveyNewBtn', 'add'], ['surveyNewBtn2', 'add'], ['stillBtn', 'tick'],
+                              ['addDetailBtn', 'add'], ['newListBtn', 'add'], ['newListBtn2', 'add']]) {
+      const b = $(id);
+      if (!b) continue;
+      const lbl = el('span', 'lbl', b.textContent.trim());
+      clear(b);
+      b.appendChild(Icons.icon(name, 18, 2.2));
+      b.appendChild(lbl);
     }
     for (const b of document.querySelectorAll('[data-close]')) {
       b.addEventListener('click', () => {
@@ -1572,6 +1727,8 @@ const App = (() => {
     on('sampleBtn', 'click', () => {
       Sample.install();
       renderPlaces();
+      const sc = document.querySelector('#v-places .scroller');
+      if (sc) sc.scrollTop = 0;
       toast('Eight invented places added, all labelled as a sample.');
     });
     on('newListBtn', 'click', newList);
@@ -1589,7 +1746,7 @@ const App = (() => {
     on('surveySkip', 'click', () => {
       if (!survey) return;
       survey.step = Math.min(survey.steps.length - 1, survey.step + 1);
-      renderStep();
+      renderStep(false);
     });
 
     on('camShoot', 'click', shoot);
