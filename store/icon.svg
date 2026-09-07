@@ -76,11 +76,13 @@
   </g>
 
   <g id="mono" fill="#000">
-    <!-- the opening is a hole, the leaf is solid, the light on the floor is a separate wedge:
-         three shapes that stay apart at 24 px, which is all a themed icon gets -->
-    <rect x="44" y="27" width="28" height="45" rx="1.5" fill="none" stroke="#000" stroke-width="4.4"/>
-    <path d="M44 26.2 L32.4 32.6 V78.4 L44 72.8 Z"/>
-    <rect x="37" y="69.6" width="42" height="4.2" rx="2.1"/>
-    <path d="M47 78.5 H69 L77.5 88 H38.5 Z"/>
+    <!-- The opening is a hole, the leaf is solid, the sill is a bar and the light on the floor
+         is a separate wedge: four shapes that stay apart at 24 px, which is all a themed icon
+         gets. Every vertex is inside the 66-unit safe circle (r=33 at 54,54), because a
+         launcher mask cuts a flat black shape into a stub rather than fading it out. -->
+    <rect x="46" y="29" width="23" height="39" rx="1.5" fill="none" stroke="#000" stroke-width="4.2"/>
+    <path d="M46 29 L35 34.5 V73.5 L46 68 Z"/>
+    <rect x="39" y="68.5" width="36" height="4" rx="2"/>
+    <path d="M47 75 H67 L71 81.5 H37 Z"/>
   </g>
 </svg>

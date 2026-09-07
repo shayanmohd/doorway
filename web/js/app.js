@@ -189,6 +189,9 @@ const App = (() => {
     clear(list);
     const all = Store.places();
     $('placesEmpty').hidden = all.length > 0;
+    // Nothing to search, filter or sort until there is something to search, filter or sort.
+    const bar = document.querySelector('#v-places .filterbar');
+    if (bar) bar.hidden = all.length === 0;
     const term = searchTerm.trim().toLowerCase();
     let rows = all.map(decorate).filter(r => passesFilters(r.c));
     if (term) rows = rows.filter(r => (r.p.name + ' ' + r.p.area + ' ' + r.p.kind).toLowerCase().includes(term));
@@ -1200,16 +1203,42 @@ const App = (() => {
     }
     const row = el('div', 'btnrow');
     const nb = el('button', 'btn small', 'New list with this place');
-    nb.addEventListener('click', () => {
-      const l = Store.addList('New list');
-      Store.toggleInList(l.id, id);
-      closeSheet('sh-lists');
-      show('lists');
-      renameList(l);
-    });
+    nb.addEventListener('click', () => newListHere(id));
     row.appendChild(nb);
     body.appendChild(row);
     openSheet('sh-lists');
+  }
+
+  /* Naming a new list used to happen on the Lists screen, underneath the place sheet that
+     opened the picker, so the field nobody could see was the field being typed into.
+     It happens here instead, in the sheet the tap came from. */
+  function newListHere(id) {
+    const body = $('listPickBody');
+    clear(body);
+    const card = el('div', 'card');
+    card.appendChild(el('h3', null, 'A new list with this place on it'));
+    const f = el('div', 'field');
+    const lab = el('label', null, 'Title'); lab.setAttribute('for', 'newListTitle');
+    const i = el('input'); i.type = 'text'; i.id = 'newListTitle'; i.maxLength = 60;
+    i.placeholder = 'What you would plan by';
+    f.appendChild(lab); f.appendChild(i);
+    card.appendChild(f);
+    const row = el('div', 'btnrow');
+    const ok = el('button', 'btn small primary', 'Make the list');
+    ok.addEventListener('click', () => {
+      const l = Store.addList(i.value);
+      Store.toggleInList(l.id, id);
+      N.buzz(9, 130);
+      openListPicker(id);
+      renderPlace();
+      toast('Added to ' + l.title + '.');
+    });
+    const no = el('button', 'btn small ghost', 'Cancel');
+    no.addEventListener('click', () => openListPicker(id));
+    row.appendChild(ok); row.appendChild(no);
+    card.appendChild(row);
+    body.appendChild(card);
+    i.focus();
   }
 
   /* ══ check ══ */
@@ -1432,7 +1461,8 @@ const App = (() => {
           if (!ok) return;
           Sample.remove(); renderYou(); toast('Sample removed.');
         });
-      } else { Sample.install(); renderYou(); toast('Sample high street added.'); }
+      } else if (Sample.install()) { renderYou(); toast('Sample high street added.'); }
+      else { renderYou(); toast('Those places are already on this phone, from a pack or a restored backup.'); }
     });
     sr.appendChild(srl); sr.appendChild(stg);
     dc.appendChild(sr);
@@ -1570,7 +1600,8 @@ const App = (() => {
     body.appendChild(el('p', 'note tight', list
       ? 'Sending the list "' + list.title + '": ' + ids.length + (ids.length === 1 ? ' place' : ' places') + ' with every survey behind them.'
       : (everything ? 'A copy of everything on this phone: ' : 'Sending everything you have: ') + ids.length +
-        (ids.length === 1 ? ' place' : ' places') + ', ' + Store.db().surveys.length + ' surveys.'));
+        (ids.length === 1 ? ' place' : ' places') + ', ' + Store.db().surveys.length + ' surveys' +
+        (Store.lists().length ? ' and ' + Store.lists().length + (Store.lists().length === 1 ? ' list.' : ' lists.') : '.')));
 
     const r = el('div', 'srow');
     const rl = el('div', 'srow-l');
@@ -1725,11 +1756,12 @@ const App = (() => {
     on('surveyNewBtn', 'click', () => startSurvey(null, null));
     on('surveyNewBtn2', 'click', () => startSurvey(null, null));
     on('sampleBtn', 'click', () => {
-      Sample.install();
+      const added = Sample.install();
       renderPlaces();
       const sc = document.querySelector('#v-places .scroller');
       if (sc) sc.scrollTop = 0;
-      toast('Eight invented places added, all labelled as a sample.');
+      toast(added ? 'Eight invented places added, all labelled as a sample.'
+                  : 'Those places are already on this phone.');
     });
     on('newListBtn', 'click', newList);
     on('newListBtn2', 'click', newList);
@@ -1832,7 +1864,13 @@ const App = (() => {
     return false;
   }
   function onPause() { stopCam(); }
-  function onResume() { if (view) render(view); }
+  function onResume() {
+    if (view) render(view);
+    // The shell pauses us for a call or a switch to another app, and stopCam() drops the
+    // stream. Coming back to a black rectangle and a shutter that answers "the camera is not
+    // running" is not an answer, so the preview is picked up again where it was left.
+    if (cam && !cam.canvas && sheetStack.includes('sh-camera')) startCam();
+  }
 
   function start() {
     applyScale();
@@ -1843,7 +1881,10 @@ const App = (() => {
       renderOnboard();
     } else {
       show('places');
-      if (Store.settings().sort === 'distance' && Store.places().length) locate();
+      // A position is asked for when it is asked for. Refresh quietly for somebody who has
+      // already given one; otherwise the link on the list is what opens the system dialog,
+      // rather than having it appear before the app has been touched.
+      if (Store.settings().sort === 'distance' && Store.places().length && Geo.last()) locate();
     }
   }
 

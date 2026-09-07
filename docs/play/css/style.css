@@ -458,6 +458,9 @@ textarea { min-height: 92px; resize: vertical; line-height: 1.45; }
 .srow { display: flex; align-items: center; justify-content: space-between; gap: 14px;
         padding: 14px 0; border-top: 1px solid var(--hair-soft); }
 .srow:first-child { border-top: 0; }
+/* A control row that ends a card must not have the next row's hairline drawn through its
+   own shadow: give the divider room to be a divider. */
+.btnrow + .srow, .chips + .srow { margin-top: 14px; }
 .srow-l { flex: 1 1 auto; min-width: 0; }
 .srow-l b { display: block; font-size: 0.9375rem; }
 .srow-l span { display: block; font-size: 0.875rem; color: var(--muted); margin-top: 2px; line-height: 1.4; }

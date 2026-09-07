@@ -143,6 +143,10 @@ const Sample = (() => {
   function install() {
     if (installed()) return false;
     const haveP = new Set(Store.db().places.map(p => p.id));
+    // Every sample id can already be here, out of a pack somebody sent or a restored backup.
+    // Flagging those as the sample would claim records that are not ours to remove, so the
+    // honest answer is that there is nothing to install.
+    if (!PLACES.some(p => !haveP.has(p.id))) return false;
     const haveS = new Set(Store.db().surveys.map(s => s.id));
     const haveC = new Set(Store.db().confirms.map(c => c.id));
     const haveL = new Set(Store.db().lists.map(l => l.id));

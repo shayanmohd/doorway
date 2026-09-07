@@ -13,3 +13,6 @@ test/shots2/
 test/shots-dark/
 test/shots-rm/
 test/shots-final/
+test/review-shots/
+test/review-shots-rm/
+test/review-shots-dark/

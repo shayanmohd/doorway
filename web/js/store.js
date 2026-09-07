@@ -164,7 +164,7 @@ const Store = (() => {
       if (!raw) return DEFAULTS();
       const d = JSON.parse(raw);
       const base = DEFAULTS();
-      return {
+      const out = {
         v: 1,
         places: Array.isArray(d.places) ? d.places : [],
         surveys: Array.isArray(d.surveys) ? d.surveys : [],
@@ -173,6 +173,17 @@ const Store = (() => {
         lens: Object.assign(base.lens, d.lens || {}),
         settings: Object.assign(base.settings, d.settings || {})
       };
+      /* 1.0.0 let a list be renamed to nothing and a place keep a name of spaces, so a phone
+         that has been running it can hold records this build would never write. Give them a
+         name on the way in rather than drawing a card with no title on it. */
+      for (const l of out.lists) {
+        if (!String(l && l.title !== undefined && l.title !== null ? l.title : '').trim()) l.title = 'Untitled list';
+        if (!Array.isArray(l.placeIds)) l.placeIds = [];
+      }
+      for (const p of out.places) {
+        if (!String(p && p.name !== undefined && p.name !== null ? p.name : '').trim()) p.name = 'Unnamed place';
+      }
+      return out;
     } catch (e) { return DEFAULTS(); }
   }
 
@@ -410,8 +421,12 @@ const Store = (() => {
       places: ps, surveys: ss,
       confirms: db.confirms.filter(c => idSet.has(c.placeId))
         .map(c => ({ id: c.id, placeId: c.placeId, at: c.at, by: c.by === 'you' ? who : c.by })),
-      lists: (o.listId ? db.lists.filter(l => l.id === o.listId) : [])
+      /* One list when one list is being sent, and every list when the whole atlas is.
+         "Export everything" is the only backup this app has, and the delete dialog tells you
+         to take one first, so it cannot quietly leave the lists behind. */
+      lists: (o.listId ? db.lists.filter(l => l.id === o.listId) : db.lists)
         .map(l => ({ id: l.id, title: l.title, placeIds: l.placeIds.filter(x => idSet.has(x)), at: l.at }))
+        .filter(l => l.placeIds.length)
     };
   }
 
@@ -434,7 +449,11 @@ const Store = (() => {
         lat: typeof p.lat === 'number' ? p.lat : null, lng: typeof p.lng === 'number' ? p.lng : null,
         at: p.at || Date.now()
       };
-      db.places.push(rec); have.add(rec.id); byName.set(key, rec.id); remap[p.id] = rec.id; out.places++;
+      // `byName` is deliberately not extended here: it exists to join an incoming place to one
+      // you already had, and adding to it would fold two distinct places from the same pack
+      // into one whenever their names matched, which is how restoring your own backup used to
+      // lose a place.
+      db.places.push(rec); have.add(rec.id); remap[p.id] = rec.id; out.places++;
     }
     const haveS = new Set(db.surveys.map(s => s.id));
     for (const s of (pack.surveys || [])) {
