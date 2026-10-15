@@ -16,3 +16,6 @@ test/shots-final/
 test/review-shots/
 test/review-shots-rm/
 test/review-shots-dark/
+
+# internal plan: competitor and pricing notes stay private
+BLUEPRINT.md
